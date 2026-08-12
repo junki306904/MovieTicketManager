@@ -66,9 +66,17 @@ public class Main {
                     manager.salesByMovie();
                     break;
                 case 20:
+                    manager.customerCountByMovie();
+                    break;
                 case 21:
+                    manager.bestMovie();
+                    break;
                 case 22:
+                    manager.reservationRateByScreening();
+                    break;
                 case 23:
+                    manager.salesByCustomerType();
+                    break;
                 case 24:
                     manager.totalPaymentByCustomer();
                     break;

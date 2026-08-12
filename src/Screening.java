@@ -24,10 +24,6 @@ public class Screening {
         this.totalSeats = totalSeats;
     }
 
-    public boolean isSeatAvailable(String seatNumber) {
-        return !reservedSeats.contains(seatNumber);
-    }
-
     public boolean reserveSeat(String seatNumber) {
         if (!reservedSeats.contains(seatNumber)) {
             reservedSeats.add(seatNumber);

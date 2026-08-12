@@ -1,3 +1,4 @@
+import javax.swing.*;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -304,7 +305,7 @@ public class CinemaManager {
         reservationMap.get(reserveNumber).getCs().addPoint(usedPoint); // 사용포인트 반환
         reservationMap.get(reserveNumber).getCs().usePoint(earnedPoint); // 적립 포인트 회수
         reservationMap.get(reserveNumber).getCs().reduceTotalPayment(finalPayment); // 누적 결제금액 감소
-        reservationMap.get(reserveNumber).isCanceled();
+//        reservationMap.get(reserveNumber).isCanceled();
         System.out.println("예매 취소가 완료되었습니다.");
     }
 
@@ -358,33 +359,96 @@ public class CinemaManager {
         System.out.println("총 매출 : " + totalSales + "원");
     }
 
-//TODO
     public void salesByMovie() {
-        HashMap<Integer, Integer> sales = new HashMap<>();
-        if (reservations.isEmpty()) {
-            System.out.println("예매 내역이 없습니다.");
-            return;
-        }
-        for (Reservation reserve : reservations) {
-            int movieNumber = reserve.getScreen().getMovieNumber();
-            int totalSales = reserve.getFinalPayment();
-            if (sales.containsKey(movieNumber)) {
-                sales.put(movieNumber, reserve.getFinalPayment() + totalSales);
-            } else {
-                sales.put(movieNumber, reserve.getFinalPayment());
-            }
-            for (int i = 0; i < movies.size(); i++) {
-                System.out.println(movies.get(i).getTitle() + " - 매출 : " + sales.get(i));
-            }
-        }
-    }
-//TODO
-    public void customersByMovie() {
-        HashMap<Integer, Integer> customers = new HashMap<>();
         if(reservations.isEmpty()) {
             System.out.println("예매 내역이 없습니다.");
             return;
         }
+        HashMap<Integer, Integer> movieSales = new HashMap<>();
+        for (Reservation reserve : reservations) {
+            int movieNumber = reserve.getScreen().getMovieNumber();
+            int totalSales = movieSales.getOrDefault(movieNumber, 0);
+            totalSales = totalSales + reserve.getFinalPayment();
+            movieSales.put(movieNumber, totalSales);
+        }
+        Iterator<Integer> it = movieSales.keySet().iterator();
+        while (it.hasNext()) {
+            int movieNumber = it.next();
+            System.out.println(movieMap.get(movieNumber).getTitle() + " 매출 : " + movieSales.get(movieNumber));
+        }
+    }
+
+    public void customerCountByMovie() {
+        HashMap<Integer, Integer> csCount = new HashMap();
+        for (Reservation reserve : reservations) {
+            int movieNumber = reserve.getScreen().getMovieNumber();
+            int currentCount = csCount.getOrDefault(movieNumber, 0);
+            currentCount = currentCount + 1;
+            csCount.put(reserve.getScreen().getMovieNumber(), currentCount);
+        }
+        Iterator<Integer> it = csCount.keySet().iterator();
+        while (it.hasNext()) {
+            int movieNumber = it.next();
+            String title = movieMap.get(movieNumber).getTitle();
+            int customerCount = csCount.get(movieNumber);
+            System.out.println(title + "관객수 : " + customerCount);
+        }
+    }
+
+    public void bestMovie() {
+        HashMap<Integer, Integer> csCount = new HashMap<>();
+        for (Reservation reserve : reservations) {
+            int movieNumber = reserve.getScreen().getMovieNumber();
+            int customerCount = csCount.getOrDefault(movieNumber, 0);
+            customerCount = customerCount + 1;
+            csCount.put(reserve.getScreen().getMovieNumber(), customerCount);
+        }
+        int max = 0;
+        Iterator<Integer> it = csCount.keySet().iterator();
+        while (it.hasNext()) {
+            int movieNumber = it.next();
+            if (csCount.get(movieNumber) > max) {
+                max = csCount.get(movieNumber);
+            }
+        }
+        Iterator<Integer> t = csCount.keySet().iterator();
+        while (t.hasNext()) {
+            int movieNumber = t.next();
+            String title = movieMap.get(movieNumber).getTitle();
+            if (csCount.get(movieNumber) == max) {
+                System.out.println(title);
+            }
+        }
+    }
+
+    public void reservationRateByScreening() {
+        if (screenings.isEmpty()) {
+            System.out.println("등록된 상영일자가 없습니다.");
+            return;
+        }
+        for (Screening screen : screenings) {
+            System.out.println(screen.getScreeningNumber() + "번 예매율 : " +
+                    screen.getReservationRate());
+        }
+    }
+
+    public void salesByCustomerType() {
+        HashMap<Integer, Integer> typeSales = new HashMap<>();
+        for (Customer cs : customers) {
+            if (cs instanceof NormalCustomer) {
+                int totalPayment = typeSales.getOrDefault(1, 0);
+                typeSales.put(1, totalPayment + cs.getTotalPayment());
+            } else if (cs instanceof MemberCustomer) {
+                int totalPayment = typeSales.getOrDefault(2, 0);
+                typeSales.put(2, totalPayment + cs.getTotalPayment());
+            } else {
+                int totalPayment = typeSales.getOrDefault(3, 0);
+                typeSales.put(3, totalPayment + cs.getTotalPayment());
+            }
+        }
+        System.out.println("일반 고객 매출 : " + typeSales.get(1));
+        System.out.println("일반 회원 매출 : " + typeSales.get(2));
+        System.out.println("VIP 회원 매출 : " + typeSales.get(3));
     }
 
     public void totalPaymentByCustomer() {
@@ -397,26 +461,24 @@ public class CinemaManager {
                     cs.getTotalPayment());
         }
     }
-//TODO
+
     public void nonReservedCustomer() {
         int count = 0;
-        HashSet<Integer> reserved = new HashSet<>();
-        if(customers.isEmpty()) {
-            System.out.println("등록된 고객이 없습니다.");
+        if (customers.isEmpty()) {
+            System.out.println("등록된 고객을 찾을 수 없습니다.");
             return;
         }
-        for(int i = 1; i < reservations.size(); i++) {
-            if(!reservations.get(i).isCanceled()) {
-                reserved.add(reservations.get(i).getCs().getCustomerNumber());
-            }
+        HashSet<String> csName = new HashSet<>();
+        for (Reservation reserve : reservations) {
+            csName.add(reserve.getCs().getCustomerName());
         }
-        for(int i = 1; i < customers.size(); i++) {
-            if(!reserved.contains(i)) {
-                System.out.println(customerMap.get(i).getCustomerName());
+        for (Customer cs : customers) {
+            if (!csName.contains(cs.getCustomerName())) {
+                System.out.println(cs.getCustomerName());
                 count++;
             }
         }
-        if(count == 0) {
+        if (count == 0) {
             System.out.println("예매하지 않은 고객이 없습니다.");
         }
     }
